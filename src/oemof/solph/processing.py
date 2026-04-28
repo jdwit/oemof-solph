@@ -517,6 +517,24 @@ def _disaggregate_tsa_result(df_dict, tsa_parameters):
                         + k * tsa_period["timesteps"] : period_offset
                         + (k + 1) * tsa_period["timesteps"]
                     ]
+                    # Multi-period TSA: pyomo TIMESTEPS is
+                    # `len(timeincrement) = len(timeindex) - 1`, so the
+                    # slice for the highest-`k` typical period in the final
+                    # analysis-period truncates by 1 row. Pad by repeating
+                    # the last available row so each disaggregated slab
+                    # keeps the canonical `timesteps_per_period` length and
+                    # matches the `result_index` produced by
+                    # `_disaggregate_tsa_timeindex`.
+                    if (
+                        not flow_k.empty
+                        and len(flow_k) < tsa_period["timesteps"]
+                    ):
+                        pad_n = tsa_period["timesteps"] - len(flow_k)
+                        flow_k = pd.concat(
+                            [flow_k]
+                            + [flow_k.iloc[[-1]]] * pad_n,
+                            ignore_index=False,
+                        )
                     # Disaggregate segmentation
                     if "segments" in tsa_period:
                         flow_k = _disaggregate_segmentation(
