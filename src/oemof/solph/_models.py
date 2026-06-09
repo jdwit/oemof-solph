@@ -449,9 +449,13 @@ class Model(po.ConcreteModel):
         Parameters
         ----------
         solver : string
-            solver to be used e.g. "cbc", "glpk", "gurobi", "cplex"
-        solver_io : string
+            solver to be used e.g. "cbc", "glpk", "gurobi", "cplex",
+            "highs", "appsi_highs"
+        solver_io : string or None
             pyomo solver interface file format: "lp", "python", "nl", etc.
+            Pass ``None`` to let pyomo pick the solver's native interface,
+            which is required for the HiGHS solvers ("highs",
+            "appsi_highs") since they do not support file-based IO.
         allow_nonoptimal : bool
             False: If no optimal solution is found, an error will be risen.
             True: If no optimal solution is found, there will be a warning.
@@ -471,7 +475,12 @@ class Model(po.ConcreteModel):
             solve_kwargs = {}
         if cmdline_options is None:
             cmdline_options = {}
-        opt = SolverFactory(solver, solver_io=solver_io)
+        # Some pyomo solver interfaces (HiGHS via pyomo.contrib.solver
+        # and appsi_highs) do not accept solver_io; pass it only when set.
+        factory_kwargs = {}
+        if solver_io is not None:
+            factory_kwargs["solver_io"] = solver_io
+        opt = SolverFactory(solver, **factory_kwargs)
 
         # set command line options
         options = opt.options
