@@ -8,6 +8,10 @@ API changes
 New features
 ############
 
+* Support the HiGHS solver out of the box, both via the legacy executable
+  interface (``solver="highs"``) and the appsi interface
+  (``solver="appsi_highs"``). Pass ``solver_io=None`` when invoking them.
+
 
 Documentation
 #############
@@ -18,6 +22,8 @@ Bug fixes
 
 * Fix TSAM result disaggregation for ``NonConvex`` and ``InvestNonConvex``
   flows, which silently dropped per-timestep variables from the output.
+* Default ``Model.dual`` and ``Model.rc`` to inactive ``Suffix`` objects
+  so the appsi solver interfaces can probe them without crashing.
 
 Other changes
 #############
