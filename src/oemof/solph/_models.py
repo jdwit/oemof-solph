@@ -176,10 +176,8 @@ class Model(po.ConcreteModel):
         self.flows = self.es.flows()
 
         self.solver_results = None
-        # Initialise as inactive suffixes so `hasattr(model, "dual")` is True
-        # and `model.dual.import_enabled()` is False until `receive_duals()`
-        # flips the direction. This keeps the appsi solver interfaces happy,
-        # which probe these attributes generically.
+        # Inactive until receive_duals() flips direction to IMPORT;
+        # appsi solvers probe these attrs unconditionally.
         self.dual = po.Suffix(direction=po.Suffix.LOCAL)
         self.rc = po.Suffix(direction=po.Suffix.LOCAL)
 
@@ -424,9 +422,7 @@ class Model(po.ConcreteModel):
         variables from solver. Shadow prices (duals) and reduced costs (rc) are
         set as attributes of the model.
         """
-        # Flip the existing suffix in place so already-attached components are
-        # preserved and the appsi/contrib solver interfaces see a single Suffix
-        # object whose direction switches from LOCAL to IMPORT.
+        # Flip in place; appsi keeps a ref to the Suffix from __init__.
         self.dual.direction = po.Suffix.IMPORT
         self.rc.direction = po.Suffix.IMPORT
 
@@ -480,8 +476,7 @@ class Model(po.ConcreteModel):
             solve_kwargs = {}
         if cmdline_options is None:
             cmdline_options = {}
-        # Some pyomo solver interfaces (HiGHS via pyomo.contrib.solver
-        # and appsi_highs) do not accept solver_io; pass it only when set.
+        # HiGHS / appsi_highs reject solver_io; only pass when set.
         factory_kwargs = {}
         if solver_io is not None:
             factory_kwargs["solver_io"] = solver_io
