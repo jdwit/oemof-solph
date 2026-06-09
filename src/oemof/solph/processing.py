@@ -309,7 +309,7 @@ def results(model, remove_last_time_point=False):
         scalars_col = "period_scalars"
 
     # add dual variables for bus constraints
-    if model.dual is not None:
+    if model.dual is not None and model.dual.import_enabled():
         grouped = groupby(
             sorted(model.BusBlock.balance.iterkeys()), lambda t: t[0]
         )

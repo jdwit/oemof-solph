@@ -176,8 +176,12 @@ class Model(po.ConcreteModel):
         self.flows = self.es.flows()
 
         self.solver_results = None
-        self.dual = None
-        self.rc = None
+        # Initialise as inactive suffixes so `hasattr(model, "dual")` is True
+        # and `model.dual.import_enabled()` is False until `receive_duals()`
+        # flips the direction. This keeps the appsi solver interfaces happy,
+        # which probe these attributes generically.
+        self.dual = po.Suffix(direction=po.Suffix.LOCAL)
+        self.rc = po.Suffix(direction=po.Suffix.LOCAL)
 
         if energysystem.periods is not None:
             self.discount_rate = kwargs.get("discount_rate")
@@ -420,10 +424,11 @@ class Model(po.ConcreteModel):
         variables from solver. Shadow prices (duals) and reduced costs (rc) are
         set as attributes of the model.
         """
-        # shadow prices
-        self.dual = po.Suffix(direction=po.Suffix.IMPORT)
-        # reduced costs
-        self.rc = po.Suffix(direction=po.Suffix.IMPORT)
+        # Flip the existing suffix in place so already-attached components are
+        # preserved and the appsi/contrib solver interfaces see a single Suffix
+        # object whose direction switches from LOCAL to IMPORT.
+        self.dual.direction = po.Suffix.IMPORT
+        self.rc.direction = po.Suffix.IMPORT
 
     def results(self):
         """Returns a nested dictionary of the results of this optimization.
